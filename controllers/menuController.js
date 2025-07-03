@@ -32,7 +32,7 @@ export const updateMenuItem = asyncHandler(async (req, res) => {
 export const deleteMenuItem = asyncHandler(async (req, res) => {
   const item = await MenuItem.findById(req.params.id)
   if (item) {
-    await item.remove()
+    await item.deleteOne()
     res.json({ message: 'Item deleted' })
   } else {
     res.status(404)

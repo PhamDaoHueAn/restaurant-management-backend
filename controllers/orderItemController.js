@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler'
 import { OrderItem } from '../models/orderItemModel.js'
 import { MenuItem } from '../models/menuItemModel.js'
+import { updateTotalAmount } from '../utils/updateTotalAmount.js'
 
 export const getOrderItems = asyncHandler(async (req, res) => {
   const items = await OrderItem.find().populate('menuItem', 'name price')
@@ -18,7 +19,7 @@ export const getOrderItemById = asyncHandler(async (req, res) => {
 })
 
 export const createOrderItem = asyncHandler(async (req, res) => {
-  const { menuItem, quantity } = req.body
+  const { order, menuItem, quantity } = req.body
 
   const menu = await MenuItem.findById(menuItem)
   if (!menu) {
@@ -26,13 +27,13 @@ export const createOrderItem = asyncHandler(async (req, res) => {
     throw new Error('Invalid menu item')
   }
 
-  const item = await OrderItem.create({
-    menuItem,
-    quantity
-  })
+  const item = await OrderItem.create({ order, menuItem, quantity })
+
+  await updateTotalAmount(order) 
 
   res.status(201).json(item)
 })
+
 
 export const updateOrderItem = asyncHandler(async (req, res) => {
   const { quantity } = req.body
@@ -41,6 +42,9 @@ export const updateOrderItem = asyncHandler(async (req, res) => {
   if (item) {
     item.quantity = quantity || item.quantity
     const updatedItem = await item.save()
+
+    await updateTotalAmount(item.order) 
+
     res.json(updatedItem)
   } else {
     res.status(404)
@@ -51,7 +55,11 @@ export const updateOrderItem = asyncHandler(async (req, res) => {
 export const deleteOrderItem = asyncHandler(async (req, res) => {
   const item = await OrderItem.findById(req.params.id)
   if (item) {
-    await item.remove()
+    const orderId = item.order
+    await item.deleteOne()
+
+    await updateTotalAmount(orderId) 
+
     res.json({ message: 'Order item deleted' })
   } else {
     res.status(404)

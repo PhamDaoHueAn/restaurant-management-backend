@@ -78,13 +78,16 @@ const importData = async () => {
       quantity: 1
     })
 
+    const totalAmount = menuItems[0].price * 2 + menuItems[2].price * 1
+    
     const order = await Order.create({
       table: tables[0]._id,
       orderItems: [orderItem1._id, orderItem2._id],
-      status: 'served'
+      status: 'served',
+      totalAmount
     })
 
-    const totalAmount = menuItems[0].price * 2 + menuItems[2].price * 1
+    
 
     await Payment.create({
       order: order._id,

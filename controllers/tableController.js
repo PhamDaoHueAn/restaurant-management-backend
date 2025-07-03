@@ -29,7 +29,7 @@ export const updateTableStatus = asyncHandler(async (req, res) => {
 export const deleteTable = asyncHandler(async (req, res) => {
   const table = await Table.findById(req.params.id)
   if (table) {
-    await table.remove()
+    await table.deleteOne()
     res.json({ message: 'Table removed' })
   } else {
     res.status(404)

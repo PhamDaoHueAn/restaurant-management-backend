@@ -1,20 +1,36 @@
 import asyncHandler from 'express-async-handler'
 import { Order } from '../models/orderModel.js'
 import { OrderItem } from '../models/orderItemModel.js'
+import { MenuItem } from '../models/menuItemModel.js'
 import mongoose from 'mongoose'
+
 
 export const createOrder = asyncHandler(async (req, res) => {
   const { table, orderItems } = req.body
   let totalAmount = 0
+  const createdOrderItems = []
   for (const item of orderItems) {
-    totalAmount += item.price * item.quantity
+    const menu = await MenuItem.findById(item.menuItem)
+    if (!menu) {
+      res.status(400)
+      throw new Error('Invalid menu item')
+    }
+
+    totalAmount += menu.price * item.quantity
+
+    const createdItem = await OrderItem.create({
+      menuItem: menu._id,
+      quantity: item.quantity,
+    })
+  
+    createdOrderItems.push(createdItem._id)
   }
-  const items = await OrderItem.insertMany(orderItems)
+  
   const order = await Order.create({
     table,
-    orderItems: items.map(i => i._id),
+    orderItems: createdOrderItems,
     totalAmount,
-    status: 'pending'
+    status: 'pending',
   })
   res.status(201).json(order)
 })
@@ -59,7 +75,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 export const deleteOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
   if (order) {
-    await order.remove()
+    await order.deleteOne()
     res.json({ message: 'Order deleted' })
   } else {
     res.status(404)
