@@ -25,7 +25,7 @@ const importData = async () => {
 
     const adminUser = await User.create({
       name: 'Admin',
-      email: 'admin@example.com',
+      email: 'admin@gmail.com',
       password: bcrypt.hashSync('123456', 10),
       role: 'admin'
     })
